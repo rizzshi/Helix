@@ -1,0 +1,13 @@
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+reportlab
+statsmodels
+shap
+python-dotenv
+openai
+prophet
+streamlit
+xgboost
