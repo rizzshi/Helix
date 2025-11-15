@@ -113,32 +113,225 @@ Ranked by feature importance (permutation-based). Higher values = stronger influ
 
 ## 🧪 Advanced Usage
 
-### Enable OpenAI Narrative
+### CLI: Complete Command Reference
 
+#### Basic Forecast Generation
 ```bash
-export OPENAI_API_KEY="your-key-here"
-python main.py --input data/sample_kpi_history.csv \
-               --kpi revenue \
-               --horizon 30 \
-               --model gbm \
-               --use-openai \
-               --output reports/report.pdf
+# Generate 30-day forecast using baseline model
+python main.py \
+  --input data/sample_kpi_history.csv \
+  --kpi revenue \
+  --horizon 30 \
+  --model baseline \
+  --output reports/baseline_forecast.pdf
 ```
 
-### Run Streamlit Dashboard
-
+#### Advanced: GBM Model with Full Analysis
 ```bash
+# Use Gradient Boosting with engineered features
+python main.py \
+  --input data/sample_kpi_history.csv \
+  --kpi revenue \
+  --horizon 90 \
+  --model gbm \
+  --output reports/gbm_90day_forecast.pdf
+```
+
+**What you get:**
+- 21 engineered features (14 lags, rolling averages, rate of change)
+- Top 15 driver analysis with permutation importance
+- Correlation heatmap showing feature relationships
+- Dataset statistics: growth %, mean, median, std dev
+- Model performance metrics: MAE, RMSE, MAPE, R², directional accuracy
+
+#### Enable GPT-4 Narrative Generation
+```bash
+# Set your OpenAI API key
+export OPENAI_API_KEY="sk-your-key-here"
+
+# Run with AI-powered insights
+python main.py \
+  --input data/sample_kpi_history.csv \
+  --kpi revenue \
+  --horizon 30 \
+  --model gbm \
+  --use-openai \
+  --output reports/ai_enhanced_report.pdf
+```
+
+**GPT-4 adds:**
+- Executive-grade narrative summary
+- Contextualized driver explanations
+- Actionable recommendations based on forecast
+
+#### Prophet Model (Seasonality Focus)
+```bash
+# Install Prophet first
+pip install prophet
+
+# Run with Prophet for strong seasonal patterns
+python main.py \
+  --input data/sample_kpi_history.csv \
+  --kpi revenue \
+  --horizon 60 \
+  --model prophet \
+  --output reports/prophet_seasonal_forecast.pdf
+```
+
+**Best for:**
+- Data with strong weekly/monthly patterns
+- Holiday effects
+- Multiple seasonality components
+
+### Interactive UI: Streamlit Dashboard
+
+#### Launch the Dashboard
+```bash
+# Start the web interface
 streamlit run app/streamlit_app.py
 ```
 
-### Custom KPI Column
+Access at **http://localhost:8501**
 
-```bash
-python main.py --input your_data.csv \
-               --kpi sales \
-               --horizon 14 \
-               --model prophet
+#### Dashboard Features
+
+**1. File Upload**
+- Drag-and-drop CSV files
+- Automatic schema validation
+- Preview dataset before processing
+
+**2. Parameter Configuration**
+- **KPI Selection**: Choose target column from dropdown
+- **Forecast Horizon**: 1-365 days via slider
+- **Model Selection**: Baseline, GBM, or Prophet
+- **AI Toggle**: Enable/disable GPT-4 narratives
+
+**3. Execution & Results**
+- Real-time pipeline logs
+- Inline visualizations:
+  - Feature importance bar chart
+  - Correlation heatmap (top 15 features)
+  - Model performance metrics
+- One-click PDF download
+
+**4. Analysis Display**
+- **Report Details**: Model used, KPI, report ID, timestamp
+- **Dataset Summary**: Total days, growth %, top correlations
+- **Driver Rankings**: Top 15 features by importance score
+- **Visual Analytics**: Interactive charts with proper scaling
+
+### Working with Custom Datasets
+
+#### Data Format Requirements
+Your CSV must include:
+```csv
+date,kpi_name,feature1,feature2,...
+2023-01-01,1000,500,250,...
+2023-01-02,1050,520,260,...
 ```
+
+**Column specifications:**
+- `date`: Timestamp column (any parseable format: YYYY-MM-DD, MM/DD/YYYY, etc.)
+- `kpi_name`: Your target metric (revenue, sales, conversions, etc.)
+- `feature1, feature2, ...`: Driver columns (numeric values)
+
+#### Example: Sales Forecasting
+```bash
+# Forecast weekly sales with marketing data
+python main.py \
+  --input data/weekly_sales.csv \
+  --kpi total_sales \
+  --horizon 52 \
+  --model gbm \
+  --output reports/sales_forecast_1year.pdf
+```
+
+#### Example: Multi-KPI Analysis
+```bash
+# Generate separate reports for different metrics
+for kpi in revenue profit_margin conversion_rate; do
+  python main.py \
+    --input data/business_metrics.csv \
+    --kpi $kpi \
+    --horizon 30 \
+    --model gbm \
+    --output "reports/${kpi}_forecast.pdf"
+done
+```
+
+### Understanding the Output
+
+#### PDF Report Structure (8 Pages)
+
+**Page 1: Cover**
+- Project title and branding
+- Author attribution
+- Generation timestamp
+
+**Page 2: Executive Summary**
+- High-level findings
+- Forecast direction and magnitude
+- Key driver highlights
+- GPT-4 narrative (if enabled)
+
+**Page 3: Dataset Analysis** ⭐ *New*
+- Total days analyzed
+- KPI statistics (mean, median, std dev, min, max)
+- Growth percentage over period
+- Feature correlations ranked by strength
+
+**Page 4: Forecast Visualization**
+- 90-day historical context
+- 30-day prediction (or custom horizon)
+- Confidence intervals (shaded region)
+- Red line marking forecast start
+
+**Page 5: Model Performance Metrics**
+- Bar chart visualization
+- MAE, RMSE, MAPE values
+- R² score
+- Directional accuracy
+
+**Page 6: Feature Importance**
+- Top 15 drivers ranked
+- Horizontal bar chart
+- Importance scores (0-1 scale)
+
+**Page 7: Correlation Heatmap**
+- Top 15 features vs KPI
+- Color-coded: red (-1) to green (+1)
+- Shows engineered + raw features
+- Highlights strongest correlation
+
+**Page 8: Detailed Metrics Table**
+- Complete performance breakdown
+- Model configuration details
+
+#### Asset Files Generated
+```
+reports/
+├── Helix_Forecast_Report_20251116.pdf  # Main report
+├── report_metadata.json                 # Structured data
+└── assets/
+    ├── correlation_heatmap.png          # 15 features correlation matrix
+    ├── feature_importance.png           # Top 15 drivers bar chart
+    └── shap_bar.png                     # SHAP values (optional)
+```
+
+### Performance Benchmarks
+
+**Sample Dataset (1200 days):**
+- Processing time: ~3-5 seconds
+- GBM model achieves:
+  - MAPE: 4.4% (excellent)
+  - R²: 0.52
+  - MAE: 999.82
+  - Directional accuracy: 41.4%
+
+**Feature Engineering:**
+- Creates 21 features from 5 original columns
+- Top driver: `rolling_7` (0.965 importance)
+- Strongest correlation: 0.979 (rolling_7 vs revenue)
 
 ---
 
